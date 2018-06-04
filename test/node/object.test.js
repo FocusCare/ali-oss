@@ -505,6 +505,36 @@ describe('test/object.test.js', () => {
     });
   });
 
+  describe('getObjectMeta()', () => {
+    before(function* () {
+        this.name = `${prefix}ali-sdk/oss/head-meta.js`;
+        const object = yield this.store.put(this.name, __filename, {
+            meta: {
+                uid: 1,
+                pid: '123',
+                slus: 'test.html',
+            },
+        });
+        assert.equal(typeof object.res.headers['x-oss-request-id'], 'string');
+        this.headers = object.res.headers;
+    });
+
+    it('should return correct object meta info when object exists', function* () {
+      let result = yield this.store.getObjectMeta(this.name);
+      assert.equal(result.status, 200);
+    })
+
+    it('should head not exists object throw NoSuchKeyError', function* () {
+        yield utils.throws(function* () {
+            yield this.store.getObjectMeta(`${this.name}not-exists`);
+        }.bind(this), (err) => {
+            assert.equal(err.name, 'NoSuchKeyError');
+            assert.equal(err.status, 404);
+            assert.equal(typeof err.requestId, 'string');
+        });
+    });
+  })
+
   describe('get()', () => {
     before(function* () {
       this.name = `${prefix}ali-sdk/oss/get-meta.js`;
