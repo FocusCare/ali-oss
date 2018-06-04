@@ -85,6 +85,7 @@ OSS, Object Storage Service. Equal to well known Amazon [S3](http://aws.amazon.c
   - [.getObjectUrl(name[, baseUrl])](#getobjecturlname-baseurl)
   - [.generateObjectUrl(name[, baseUrl])](#generateobjecturlname-baseurl)
   - [.head*(name[, options])](#headname-options)
+  - [.getObjectMeta*(name[, options])](#getobjectmetaname-options)
   - [.get*(name, file[, options])](#getname-file-options)
   - [.getStream*(name[, options])](#getstreamname-options)
   - [.delete*(name[, options])](#deletename-options)
@@ -1120,6 +1121,73 @@ console.log(object);
 
 ```js
 var object = this.store.head('ossdemo/head-meta');
+// will throw NoSuchKeyError
+```
+
+### .getObjectMeta*(name[, options])
+
+Head an object and get the meta info.
+
+parameters:
+
+- name {String} object name store on OSS
+- [options] {Object} optional parameters
+  - [timeout] {Number} the operation timeout
+  - [headers] {Object} extra headers, detail see [RFC 2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html)
+    - 'If-Modified-Since' object modified after this time will return 200 and object meta,
+        otherwise return 304 not modified
+    - 'If-Unmodified-Since' object modified before this time will return 200 and object meta,
+        otherwise throw PreconditionFailedError
+    - 'If-Match' object etag equal this will return 200 and object meta,
+        otherwise throw PreconditionFailedError
+    - 'If-None-Match' object etag not equal this will return 200 and object meta,
+        otherwise return 304 not modified
+
+Success will return the object's meta information.
+
+object:
+
+- status {Number} response status, maybe 200 or 304
+- meta {Object} object user meta, including
+    - server
+    - date
+    - content-length
+    - connection
+    - x-oss-request-id
+    - etag
+    - x-oss-hash-crc64ecma
+    - last-modified
+    - x-oss-server-time
+- res {Object} response info, including
+  - status {Number} response status
+  - headers {Object} response headers
+  - size {Number} response size
+  - rt {Number} request total use time (ms)
+
+example:
+
+- Head an exists object and get user meta
+
+```js
+yield this.store.put('ossdemo/head-meta', new Buffer('foo'), {
+  meta: {
+    uid: 1,
+    path: 'foo/demo.txt'
+  }
+});
+var object = yield this.store.getObjectMeta('ossdemo/head-meta');
+console.log(object);
+{
+  status: 200,
+  meta: object.headers
+  res: object.res
+}
+```
+
+- Head a not exists object
+
+```js
+var object = this.store.getObjectMeta('ossdemo/head-meta');
 // will throw NoSuchKeyError
 ```
 
